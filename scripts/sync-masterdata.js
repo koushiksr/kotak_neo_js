@@ -2,7 +2,7 @@ import 'dotenv/config';
 import fs from 'fs-extra';
 import path from 'path';
 import axios from 'axios';
-import OTPAuth from 'otpauth';
+import * as OTPAuth from 'otpauth';
 import { parse } from 'csv-parse/sync';
 
 const { ensureDir, writeJson, writeFile } = fs;
