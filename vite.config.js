@@ -2,12 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
+  // REPLACE 'kotak_neo_js' with your actual repository name
+  base: '/kotak_neo_js/', 
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      // Proxy API calls starting with /api to the Kotak backend during development
       '/api': {
         target: 'https://mis.kotaksecurities.com',
         changeOrigin: true,
