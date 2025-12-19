@@ -1,0 +1,44 @@
+name: Auto masterdata sync & deploy
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'   # daily 02:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run masterdata sync (server-side)
+        env:
+          NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
+          NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
+          NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
+          NEO_PHONE: ${{ secrets.NEO_PHONE }}
+          NEO_UCC: ${{ secrets.NEO_UCC }}
+          NEO_MPIN: ${{ secrets.NEO_MPIN }}
+        run: node scripts/sync-masterdata.js
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
