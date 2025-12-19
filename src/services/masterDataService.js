@@ -213,55 +213,103 @@ export default {
       return r.data?.data?.filesPaths || [];
     }
 
-    async function sync() {
-      try {
-        await doLogin();
-        const files = await fetchFileList();
-        if (!files || files.length === 0) {
-          console.warn('No master files returned');
-          return;
-        }
+    // async function sync() {
+    //   try {
+    //     await doLogin();
+    //     const files = await fetchFileList();
+    //     if (!files || files.length === 0) {
+    //       console.warn('No master files returned');
+    //       return;
+    //     }
 
-        const SAVE_FOLDER = path.join(process.cwd(), 'public', 'masterdata');
+    //     const SAVE_FOLDER = path.join(process.cwd(), 'public', 'masterdata');
+    //     await ensureDir(SAVE_FOLDER);
+
+    //     let masterObj = {};
+    //     for (const url of files) {
+    //       const fileName = url.split('/').pop();
+    //       console.log(`📥 Downloading ${fileName}`);
+    //       const res = await axios.get(url, { responseType: 'text' });
+    //       await writeFile(path.join(SAVE_FOLDER, fileName), res.data, 'utf8');
+
+    //       const records = parse(res.data, { columns: true, skip_empty_lines: true, trim: true });
+    //       for (const row of records) {
+    //         // if (row.pTrdSymbol) masterObj[row.pTrdSymbol.toUpperCase()] = row;
+    //         // Pick only the symbols you actually trade (e.g., exclude indices if needed)
+    //         if (row.pTrdSymbol) {
+    //             // MINIMIZE: Only save essential keys to save space
+    //             masterObj[row.pTrdSymbol.toUpperCase()] = {
+    //                 s: row.pTrdSymbol,    // Use short keys to save more bytes
+    //                 t: row.pInstToken,   // Token
+    //                 e: row.pExch,        // Exchange
+    //                 st: row.pStrikePrice,// Strike
+    //                 ot: row.pOptionType, // CE/PE
+    //                 ls: row.pLotSize     // Lot Size
+    //             };
+    //         }
+    //       }
+    //     }
+
+    //     console.log('⚡ Sorting and writing index');
+    //     const sortedKeys = Object.keys(masterObj).sort();
+    //     const finalIndex = {};
+    //     for (const k of sortedKeys) finalIndex[k] = masterObj[k];
+
+    //     await writeJson(path.join(SAVE_FOLDER, 'master_index.json'), finalIndex);
+    //     console.log('✨ Sync complete.');
+    //   } catch (err) {
+    //     console.error('Sync failed:', err.message || err);
+    //     process.exitCode = 1;
+    //   }
+    // }
+    async function runSync() {
+    try {
         await ensureDir(SAVE_FOLDER);
+        await authService.autoLogin();
+        
+        const response = await neoApi.get('/script-details/1.0/masterscrip/file-paths');
+        const { filesPaths } = response.data.data;
 
         let masterObj = {};
-        for (const url of files) {
-          const fileName = url.split('/').pop();
-          console.log(`📥 Downloading ${fileName}`);
-          const res = await axios.get(url, { responseType: 'text' });
-          await writeFile(path.join(SAVE_FOLDER, fileName), res.data, 'utf8');
 
-          const records = parse(res.data, { columns: true, skip_empty_lines: true, trim: true });
-          for (const row of records) {
-            // if (row.pTrdSymbol) masterObj[row.pTrdSymbol.toUpperCase()] = row;
-            // Pick only the symbols you actually trade (e.g., exclude indices if needed)
-            if (row.pTrdSymbol) {
-                // MINIMIZE: Only save essential keys to save space
-                masterObj[row.pTrdSymbol.toUpperCase()] = {
-                    s: row.pTrdSymbol,    // Use short keys to save more bytes
-                    t: row.pInstToken,   // Token
-                    e: row.pExch,        // Exchange
-                    st: row.pStrikePrice,// Strike
-                    ot: row.pOptionType, // CE/PE
-                    ls: row.pLotSize     // Lot Size
-                };
+        for (const url of filesPaths) {
+            const fileName = url.split('/').pop();
+            console.log(`📥 Processing: ${fileName}`);
+
+            const fileRes = await axios.get(url, { responseType: 'text' });
+            
+            // We do NOT save the raw CSV file to disk anymore to save space
+            // await writeFile(join(SAVE_FOLDER, fileName), fileRes.data); <--- REMOVE THIS
+            
+            const records = parse(fileRes.data, { columns: true, skip_empty_lines: true, trim: true });
+            
+            for (const row of records) {
+                if (row.pTrdSymbol) {
+                    // Only store essential fields to keep JSON size < 50MB
+                    masterObj[row.pTrdSymbol.toUpperCase()] = {
+                        t: row.pInstToken,    // token
+                        s: row.pTrdSymbol,   // symbol
+                        e: row.pExch,        // exchange
+                        st: row.pStrikePrice,// strike
+                        ot: row.pOptionType  // CE/PE
+                    };
+                }
             }
-          }
+            // Free memory
+            records.length = 0;
         }
 
-        console.log('⚡ Sorting and writing index');
-        const sortedKeys = Object.keys(masterObj).sort();
-        const finalIndex = {};
-        for (const k of sortedKeys) finalIndex[k] = masterObj[k];
-
-        await writeJson(path.join(SAVE_FOLDER, 'master_index.json'), finalIndex);
-        console.log('✨ Sync complete.');
-      } catch (err) {
-        console.error('Sync failed:', err.message || err);
-        process.exitCode = 1;
-      }
+        console.log("💾 Writing optimized index...");
+        // writeJson handles the stringification efficiently
+        await writeJson(INDEX_FILE, masterObj);
+        
+        masterObj = null;
+        console.log(`✨ SYNC COMPLETE.`);
+    } catch (err) {
+        console.error("❌ Sync Failed:", err.message);
+        process.exit(1);
     }
+}
 
     await sync();
   }

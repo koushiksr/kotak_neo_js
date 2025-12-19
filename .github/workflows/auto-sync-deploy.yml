@@ -4,19 +4,15 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: '30 3 * * *'   # 9:00 AM IST (Runs daily before market open)
-  workflow_dispatch: {}    # Allows you to run it manually from GitHub UI
+    - cron: '30 3 * * *'   # 9:00 AM IST
+  workflow_dispatch: {}
 
 jobs:
   sync-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write      # Required to save the JSON files back to your repo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,23 +25,16 @@ jobs:
 
       - name: Run masterdata sync
         env:
-          # Maps GitHub Secrets to the VITE_ names your script expects
           VITE_NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
           VITE_NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
           VITE_NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
           VITE_NEO_PHONE: ${{ secrets.NEO_PHONE }}
           VITE_NEO_UCC: ${{ secrets.NEO_UCC }}
           VITE_NEO_MPIN: ${{ secrets.NEO_MPIN }}
-        run: node scripts/sync-masterdata.js
-
-      - name: Commit fresh masterdata
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          # Only add the masterdata folder to prevent committing temp files
-          git add public/masterdata/ || echo "Folder not found"
-          git commit -m "chore: sync masterdata [skip ci]" || echo "No changes to commit"
-          git push origin main || echo "No changes to push"
+          node scripts/sync-masterdata.js
+          # Ensure large raw CSVs are deleted so they don't bloat the build
+          rm -f public/masterdata/*.csv
 
       - name: Build
         run: npm run build
@@ -55,3 +44,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          force_orphan: true # Essential for handling large deployment branches
