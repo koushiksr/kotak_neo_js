@@ -234,7 +234,19 @@ export default {
 
           const records = parse(res.data, { columns: true, skip_empty_lines: true, trim: true });
           for (const row of records) {
-            if (row.pTrdSymbol) masterObj[row.pTrdSymbol.toUpperCase()] = row;
+            // if (row.pTrdSymbol) masterObj[row.pTrdSymbol.toUpperCase()] = row;
+            // Pick only the symbols you actually trade (e.g., exclude indices if needed)
+            if (row.pTrdSymbol) {
+                // MINIMIZE: Only save essential keys to save space
+                masterObj[row.pTrdSymbol.toUpperCase()] = {
+                    s: row.pTrdSymbol,    // Use short keys to save more bytes
+                    t: row.pInstToken,   // Token
+                    e: row.pExch,        // Exchange
+                    st: row.pStrikePrice,// Strike
+                    ot: row.pOptionType, // CE/PE
+                    ls: row.pLotSize     // Lot Size
+                };
+            }
           }
         }
 
