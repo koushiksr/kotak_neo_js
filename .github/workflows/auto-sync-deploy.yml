@@ -4,12 +4,14 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: '0 2 * * *'   # daily 02:00 UTC
-  workflow_dispatch: {}
+    - cron: '30 3 * * *'   # 9:00 AM IST (Runs daily before market open)
+  workflow_dispatch: {}    # Allows you to run it manually from GitHub UI
 
 jobs:
   sync-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Required to save the JSON files back to your repo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,19 +22,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run masterdata sync (server-side)
+      - name: Run masterdata sync
         env:
-          NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
-          NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
-          NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
-          NEO_PHONE: ${{ secrets.NEO_PHONE }}
-          NEO_UCC: ${{ secrets.NEO_UCC }}
-          NEO_MPIN: ${{ secrets.NEO_MPIN }}
+          # Maps GitHub Secrets to the VITE_ names your script expects
+          VITE_NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
+          VITE_NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
+          VITE_NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
+          VITE_NEO_PHONE: ${{ secrets.NEO_PHONE }}
+          VITE_NEO_UCC: ${{ secrets.NEO_UCC }}
+          VITE_NEO_MPIN: ${{ secrets.NEO_MPIN }}
         run: node scripts/sync-masterdata.js
+
+      - name: Commit fresh masterdata
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          # Only add the masterdata folder to prevent committing temp files
+          git add public/masterdata/ || echo "Folder not found"
+          git commit -m "chore: sync masterdata [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
 
       - name: Build
         run: npm run build
