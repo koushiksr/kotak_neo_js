@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  // REPLACE 'kotak_neo_js' with your actual repository name
   base: '/kotak_neo_js/',
   publicDir: 'public',
   plugins: [react(), tailwindcss()],
