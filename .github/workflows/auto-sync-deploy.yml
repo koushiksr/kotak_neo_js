@@ -33,11 +33,6 @@ jobs:
           VITE_NEO_PHONE: ${{ secrets.NEO_PHONE }}
           VITE_NEO_UCC: ${{ secrets.NEO_UCC }}
           VITE_NEO_MPIN: ${{ secrets.NEO_MPIN }}
-        run: |
-          node scripts/sync-masterdata.js
-          # Cleanup huge CSVs so the build is light
-          rm -f public/masterdata/*.csv 
-
       - name: Build
         run: npm run build
 

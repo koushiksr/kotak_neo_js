@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "sync": "node scripts/sync-masterdata.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -16,7 +15,6 @@
     "@mui/material": "^7.3.6",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
-    "better-sqlite3": "^12.5.0",
     "csv-parse": "^6.1.0",
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
