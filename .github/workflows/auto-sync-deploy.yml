@@ -26,15 +26,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run masterdata sync
-        run: npm run sync:masterdata
-        env:
-          VITE_NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
-          VITE_NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
-          VITE_NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
-          VITE_NEO_PHONE: ${{ secrets.NEO_PHONE }}
-          VITE_NEO_UCC: ${{ secrets.NEO_UCC }}
-          VITE_NEO_MPIN: ${{ secrets.NEO_MPIN }}
+      # - name: Run masterdata sync
+      #   run: npm run sync:masterdata
+      #   env:
+      #     VITE_NEO_BASE_URL: ${{ secrets.NEO_BASE_URL }}
+      #     VITE_NEO_TOKEN: ${{ secrets.NEO_TOKEN }}
+      #     VITE_NEO_TOTP_SECRET: ${{ secrets.NEO_TOTP_SECRET }}
+      #     VITE_NEO_PHONE: ${{ secrets.NEO_PHONE }}
+      #     VITE_NEO_UCC: ${{ secrets.NEO_UCC }}
+      #     VITE_NEO_MPIN: ${{ secrets.NEO_MPIN }}
 
       - name: Build
         run: npm run build
