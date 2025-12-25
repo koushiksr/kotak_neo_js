@@ -11,15 +11,24 @@
     "sync": "node scripts/sync-masterdata.js"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.6",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
+    "better-sqlite3": "^12.5.0",
     "csv-parse": "^6.1.0",
+    "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
-    "fs-extra": "^11.3.2",
+    "fs-extra": "^11.3.3",
     "lucide-react": "^0.561.0",
+    "msgpack-lite": "^0.1.26",
+    "node-fetch": "^3.3.2",
     "otpauth": "^9.4.1",
+    "papaparse": "^5.5.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sql.js": "^1.13.0",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

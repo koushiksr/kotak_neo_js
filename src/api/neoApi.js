@@ -4,19 +4,21 @@ import * as OTPAuth from "otpauth";
 // 1. Unified Environment & Storage Helper
 const getEnv = (key) => typeof import.meta !== 'undefined' && import.meta.env?.[key];
 
-const neoStorage = (typeof window !== 'undefined' && window.localStorage) 
-  ? window.localStorage 
+const neoStorage = (typeof window !== 'undefined' && window.localStorage)
+  ? window.localStorage
   : {
-      _data: {},
-      setItem(k, v) { this._data[k] = String(v); },
-      getItem(k) { return this._data[k] || null; }
-    };
+    _data: {},
+    setItem(k, v) { this._data[k] = String(v); },
+    getItem(k) { return this._data[k] || null; }
+  };
 
 // 2. CREATE THE CENTRAL INSTANCE
-const neoApi = axios.create({ 
+const neoApi = axios.create({
   baseURL: getEnv("VITE_NEO_BASE_URL"),
   headers: {
-    'Content-Type': 'application/json' // Default for most calls
+    'Content-Type': 'application/json', // Default for most calls
+    'Authorization': getEnv("VITE_NEO_TOKEN"),
+    'neo-fin-key': 'neotradeapi',
   }
 });
 
@@ -29,7 +31,7 @@ neoApi.interceptors.request.use((config) => {
 
   if (token) config.headers['Authorization'] = token;
   config.headers['neo-fin-key'] = 'neotradeapi';
-  
+
   if (auth) config.headers['Auth'] = auth;
   if (sid) config.headers['Sid'] = sid;
 
@@ -48,16 +50,16 @@ export const authService = {
     const totp = this.generateTOTP();
     // Step 1: Login
     const r1 = await neoApi.post('login/1.0/tradeApiLogin', {
-      mobileNumber: getEnv("VITE_NEO_PHONE"), 
-      ucc: getEnv("VITE_NEO_UCC"), 
+      mobileNumber: getEnv("VITE_NEO_PHONE"),
+      ucc: getEnv("VITE_NEO_UCC"),
       totp
     });
 
     const { token, sid } = r1.data.data;
 
     // Step 2: MPIN Validation
-    const r2 = await neoApi.post('login/1.0/tradeApiValidate', { 
-      mpin: getEnv("VITE_NEO_MPIN") 
+    const r2 = await neoApi.post('login/1.0/tradeApiValidate', {
+      mpin: getEnv("VITE_NEO_MPIN")
     }, {
       headers: { 'Auth': token, 'Sid': sid } // Pass temp tokens for validation
     });
